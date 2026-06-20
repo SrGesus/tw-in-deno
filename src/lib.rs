@@ -1,3 +1,5 @@
+use std::sync::Mutex;
+
 use rustyscript::{
     Module,
     deno_core::ModuleId,
@@ -14,6 +16,7 @@ const BUILDER_MODULE: Module = Module::new_static(
     r#"
         const sheet = twindSheets.virtualSheet();
         twind.setup({
+            mode: 'silent',
             sheet
         });
 
@@ -29,7 +32,7 @@ const BUILDER_MODULE: Module = Module::new_static(
 
 pub struct TailwindBuilder {
     builder_handle: ModuleId,
-    worker: DefaultWorker,
+    worker: Mutex<DefaultWorker>,
 }
 
 impl Default for TailwindBuilder {
@@ -45,14 +48,25 @@ impl Default for TailwindBuilder {
 
         Self {
             builder_handle,
-            worker,
+            worker: Mutex::new(worker),
         }
+    }
+}
+
+impl std::fmt::Debug for TailwindBuilder {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("TailwindBuilder")
+            .field("builder_handle", &self.builder_handle)
+            .field("worker", &"rustyscript::worker::DefaultWorker")
+            .finish()
     }
 }
 
 impl TailwindBuilder {
     pub fn add_classes(&mut self, classes: &str) {
         self.worker
+            .lock()
+            .unwrap()
             .call_function(
                 Some(self.builder_handle),
                 "add_classes".to_owned(),
@@ -63,6 +77,8 @@ impl TailwindBuilder {
 
     pub fn bundle(&mut self) -> String {
         self.worker
+            .lock()
+            .unwrap()
             .call_function(Some(self.builder_handle), "bundle".to_owned(), vec![])
             .unwrap()
     }
