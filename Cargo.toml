@@ -4,6 +4,6 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-rustyscript = { version = "^0.11", features = []}
+rustyscript = { version = "^0.11"}
 serde = {version = "=1.0.215", features = ["derive"] }
 deno_media_type = "=0.2.1"
