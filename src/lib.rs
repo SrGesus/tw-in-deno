@@ -1,14 +1,13 @@
-use rustyscript::{Module, ModuleHandle, Runtime, RuntimeOptions, json_args};
+use rustyscript::{
+    Module,
+    deno_core::ModuleId,
+    serde_json::json,
+    worker::{DefaultWorker, DefaultWorkerOptions},
+};
 
-const TWIND_MODULE: Module = Module::new_static(
-    "twind.js",
-    include_str!("twind.umd.js"),
-);
+const TWIND_MODULE: Module = Module::new_static("twind.js", include_str!("twind.umd.js"));
 
-const TWIND_SHEETS_MODULE: Module = Module::new_static(
-    "sheets.js",
-    include_str!("sheets.umd.js"),
-);
+const TWIND_SHEETS_MODULE: Module = Module::new_static("sheets.js", include_str!("sheets.umd.js"));
 
 const BUILDER_MODULE: Module = Module::new_static(
     "builder",
@@ -29,42 +28,42 @@ const BUILDER_MODULE: Module = Module::new_static(
 );
 
 pub struct TailwindBuilder {
-    builder_handle: ModuleHandle,
-    runtime: Runtime,
+    builder_handle: ModuleId,
+    worker: DefaultWorker,
 }
 
 impl Default for TailwindBuilder {
     fn default() -> Self {
-        let mut runtime = Runtime::new(RuntimeOptions {
-            ..RuntimeOptions::default()
+        let worker = DefaultWorker::new(DefaultWorkerOptions {
+            ..Default::default()
         })
         .unwrap();
 
-        runtime.load_module(&TWIND_MODULE).unwrap();
-        runtime.load_module(&TWIND_SHEETS_MODULE).unwrap();
-        let builder_handle = runtime.load_module(&BUILDER_MODULE).unwrap();
+        worker.load_module(TWIND_MODULE).unwrap();
+        worker.load_module(TWIND_SHEETS_MODULE).unwrap();
+        let builder_handle = worker.load_module(BUILDER_MODULE).unwrap();
 
         Self {
             builder_handle,
-            runtime,
+            worker,
         }
     }
 }
 
 impl TailwindBuilder {
     pub fn add_classes(&mut self, classes: &str) {
-        self.runtime
+        self.worker
             .call_function(
-                Some(&self.builder_handle),
-                "add_classes",
-                json_args!(classes),
+                Some(self.builder_handle),
+                "add_classes".to_owned(),
+                vec![json!(classes)],
             )
             .unwrap()
     }
 
     pub fn bundle(&mut self) -> String {
-        self.runtime
-            .call_function(Some(&self.builder_handle), "bundle", json_args!())
+        self.worker
+            .call_function(Some(self.builder_handle), "bundle".to_owned(), vec![])
             .unwrap()
     }
 }
