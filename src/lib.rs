@@ -2,12 +2,12 @@ use rustyscript::{Module, ModuleHandle, Runtime, RuntimeOptions, json_args};
 
 const TWIND_MODULE: Module = Module::new_static(
     "twind.js",
-    include_str!("../node_modules/twind/twind.umd.js"),
+    include_str!("twind.umd.js"),
 );
 
 const TWIND_SHEETS_MODULE: Module = Module::new_static(
     "sheets.js",
-    include_str!("../node_modules/twind/sheets/sheets.umd.js"),
+    include_str!("sheets.umd.js"),
 );
 
 const BUILDER_MODULE: Module = Module::new_static(
